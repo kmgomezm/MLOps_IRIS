@@ -60,3 +60,5 @@ def load_and_log():
 
 # testing
 load_and_log()
+
+# para ejecutar
