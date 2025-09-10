@@ -39,12 +39,6 @@ def load(train_size=.8, val_size=0.1, random_state=42):
     X_train, X_val, y_train, y_val = train_test_split(
         X_temp, y_temp, test_size=val_size_adjusted, random_state=random_state, stratify=y_temp
     )
-    
-    print(f"Train size: {len(X_train)}")
-    print(f"Validation size: {len(X_val)}")
-    print(f"Test size: {len(X_test)}")
-    print(f"Feature names: {iris.feature_names}")
-    print(f"Target names: {iris.target_names}")
 
     training_set = TensorDataset(X_train, y_train)
     validation_set = TensorDataset(X_val, y_val)
@@ -55,7 +49,7 @@ def load(train_size=.8, val_size=0.1, random_state=42):
 def load_and_log():
     # 🚀 start a run, with a type to label it and a project it can call home
     with wandb.init(
-        project="MLOps-Pycon2023",
+        project="MLOps_Iris",
         name=f"Load Raw Data ExecId-{args.IdExecution}", job_type="load-data") as run:
         
         datasets = load()  # separate code for loading the datasets
