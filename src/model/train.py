@@ -236,9 +236,9 @@ def evaluate_and_log(experiment_id='99',config=None,):
         hardest_table = wandb.Table(columns=["features", "true_label", "predicted_label", "loss"])
         
         for example, true_label, pred_label, loss_val in zip(hardest_examples, true_labels, preds, highest_losses):
-            # Convert tensor to numpy and iterate through individual values
-            example_values = example.cpu().numpy()
-            features_str = ", ".join([f"{name}: {val:.2f}" for name, val in zip(iris_feature_names, example_values)])
+            # Convert tensor to numpy and then to Python floats
+            example_values = example.cpu().numpy().flatten()
+            features_str = ", ".join([f"{name}: {float(val):.2f}" for name, val in zip(iris_feature_names, example_values)])
             hardest_table.add_data(
                 features_str,
                 iris_class_names[int(true_label)],
