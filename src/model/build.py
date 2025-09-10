@@ -1,3 +1,4 @@
+
 import torch
 
 # Import the model class from the main file
@@ -21,14 +22,16 @@ if not os.path.exists("./model"):
     # If it doesn't exist, create it
     os.makedirs("./model")
 
-# Data parameters testing
-num_classes = 10
-input_shape = 784
+# Data parameters for Iris dataset
+num_classes = 3  # setosa, versicolor, virginica
+input_shape = 4  # sepal_length, sepal_width, petal_length, petal_width
 
 def build_model_and_log(config, model, model_name="MLP", model_description="Simple MLP"):
-    with wandb.init(project="MLOps-Pycon2023", 
-        name=f"initialize Model ExecId-{args.IdExecution}", 
-        job_type="initialize-model", config=config) as run:
+    with wandb.init(project="MLOps_Iris", 
+        name=f"initialize-Model-ExecId-{args.IdExecution}", 
+        job_type="initialize-model", 
+        config=config,
+        tags=["iris", "model-initialization", "pytorch"]) as run:
         config = wandb.config
 
         model_artifact = wandb.Artifact(
@@ -38,23 +41,44 @@ def build_model_and_log(config, model, model_name="MLP", model_description="Simp
 
         name_artifact_model = f"initialized_model_{model_name}.pth"
 
+        # Save model state dict
         torch.save(model.state_dict(), f"./model/{name_artifact_model}")
-        # ➕ another way to add a file to an Artifact
+        
+        # Add file to artifact
         model_artifact.add_file(f"./model/{name_artifact_model}")
 
+        # Save to wandb
         wandb.save(name_artifact_model)
+
+        # Log model summary information
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        
+        wandb.log({
+            "model_total_parameters": total_params,
+            "model_trainable_parameters": trainable_params,
+            "model_input_shape": input_shape,
+            "model_output_classes": num_classes
+        })
 
         run.log_artifact(model_artifact)
 
 
-# MLP
-# Testing config
-model_config = {"input_shape":input_shape,
-                "hidden_layer_1": 32,
-                "hidden_layer_2": 64,
-                "num_classes":num_classes}
+# MLP Configuration for Iris dataset
+model_config = {
+    "input_shape": input_shape,      # 4 features for Iris
+    "hidden_layer_1": 16,            # Smaller hidden layer for Iris
+    "hidden_layer_2": 8,             # Smaller second hidden layer
+    "num_classes": num_classes       # 3 classes for Iris
+}
 
+# Create model instance
 model = Classifier(**model_config)
 
-build_model_and_log(model_config, model, "linear","Simple Linear Classifier")
-# Cambio para push
+# Build and log the model
+build_model_and_log(
+    model_config, 
+    model, 
+    "iris-classifier", 
+    "Neural Network Classifier for Iris dataset with 4 input features and 3 output classes"
+)
