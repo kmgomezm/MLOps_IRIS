@@ -4,6 +4,9 @@ from torch.utils.data import TensorDataset
 # Testing
 import argparse
 import wandb
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--IdExecution', type=str, help='ID of the execution')
@@ -12,24 +15,40 @@ args = parser.parse_args()
 if args.IdExecution:
     print(f"IdExecution: {args.IdExecution}")
 
-def load(train_size=.8):
+def load(train_size=.8, val_size=0.1, random_state=42):
     """
-    # Load the data
+    # Load the Iris data and split into train/val/test sets
     """
       
-    # the data, split between train and test sets
-    train = torchvision.datasets.MNIST(root='./data', train=True, download=True)
-    test = torchvision.datasets.MNIST(root='./data', train=False, download=True)
+    # Cargar el dataset Iris
+    iris = load_iris()
+    X, y = iris.data, iris.target
+    
+    # Convertir a tensores de PyTorch
+    X = torch.FloatTensor(X)
+    y = torch.LongTensor(y)
+    
+    # Primera división: train+val vs test
+    test_size = 1.0 - train_size - val_size
+    X_temp, X_test, y_temp, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+    
+    # Segunda división: train vs val
+    val_size_adjusted = val_size / (train_size + val_size)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_temp, y_temp, test_size=val_size_adjusted, random_state=random_state, stratify=y_temp
+    )
+    
+    print(f"Train size: {len(X_train)}")
+    print(f"Validation size: {len(X_val)}")
+    print(f"Test size: {len(X_test)}")
+    print(f"Feature names: {iris.feature_names}")
+    print(f"Target names: {iris.target_names}")
 
-    (x_train, y_train), (x_test, y_test) = (train.data, train.targets), (test.data, test.targets)
-
-    # split off a validation set for hyperparameter tuning
-    x_train, x_val = x_train[:int(len(train)*train_size)], x_train[int(len(train)*train_size):]
-    y_train, y_val = y_train[:int(len(train)*train_size)], y_train[int(len(train)*train_size):]
-
-    training_set = TensorDataset(x_train, y_train)
-    validation_set = TensorDataset(x_val, y_val)
-    test_set = TensorDataset(x_test, y_test)
+    training_set = TensorDataset(X_train, y_train)
+    validation_set = TensorDataset(X_val, y_val)
+    test_set = TensorDataset(X_test, y_test)
     datasets = [training_set, validation_set, test_set]
     return datasets
 
@@ -44,10 +63,14 @@ def load_and_log():
 
         # 🏺 create our Artifact
         raw_data = wandb.Artifact(
-            "mnist-raw", type="dataset",
-            description="raw MNIST dataset, split into train/val/test",
-            metadata={"source": "torchvision.datasets.MNIST",
-                      "sizes": [len(dataset) for dataset in datasets]})
+            "iris-raw", type="dataset",
+            description="raw Iris dataset, split into train/val/test",
+            metadata={"source": "sklearn.datasets.load_iris",
+                      "sizes": [len(dataset) for dataset in datasets],
+                      "features": 4,
+                      "classes": 3,
+                      "feature_names": ["sepal_length", "sepal_width", "petal_length", "petal_width"],
+                      "target_names": ["setosa", "versicolor", "virginica"]})
 
         for name, data in zip(names, datasets):
             # 🐣 Store a new file in the artifact, and write something into its contents.
@@ -59,6 +82,5 @@ def load_and_log():
         run.log_artifact(raw_data)
 
 # testing
-load_and_log()
-
-# para ejecuta
+if __name__ == "__main__":
+    load_and_log()
