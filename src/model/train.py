@@ -159,7 +159,7 @@ def train_and_log(config,experiment_id='99'):
         tags=["iris", "training", "pytorch"]) as run:
         
         config = wandb.config
-        # Use Iris dataset artifact
+        
         data = run.use_artifact('iris-raw:latest')
         data_dir = data.download()
 
@@ -254,9 +254,9 @@ for id, (epoch, lr) in enumerate(zip(epochs, learning_rates)):
     print(f"\n🔥 Experiment {id+1}: Epochs={epoch}, LR={lr}")
     
     train_config = {
-        "batch_size": 16,  # Smaller batch size for Iris
+        "batch_size": 16,  
         "epochs": epoch,
-        "batch_log_interval": 5,  # More frequent logging
+        "batch_log_interval": 5,  
         "optimizer": "Adam",
         "learning_rate": lr
     }
